@@ -148,7 +148,7 @@ def summary(
     batch_size: int = -1,
     device: str = 'cpu',
     file: IO[str] = sys.stdout,
-    flush: bool = False
+    flush: bool = False,
 ) -> None:
     summary = inspect(model, input_size, batch_size=batch_size, device=device)
     n = network_info(summary, input_size, batch_size)

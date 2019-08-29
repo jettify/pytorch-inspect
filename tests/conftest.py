@@ -5,7 +5,6 @@ import torch.nn.functional as F
 
 
 class SimpleNet(nn.Module):
-
     def __init__(self):
         super(SimpleNet, self).__init__()
         # 1 input image channel, 6 output channels, 3x3 square convolution

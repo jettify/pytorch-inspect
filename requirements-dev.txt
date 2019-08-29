@@ -1,0 +1,13 @@
+-e .
+bandit==1.5.1
+black==19.3b0
+flake8-bugbear==19.3.0
+flake8-quotes==1.0.0
+flake8==3.7.7
+ipdb==0.12.2
+ipython==7.7.0
+mypy==0.670
+pyroma==2.4
+pytest-cov==2.6.1
+pytest==4.4.0
+torchvision==0.3.0

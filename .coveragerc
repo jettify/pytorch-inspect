@@ -1,0 +1,4 @@
+[run]
+branch = True
+source = torch_inspect
+omit = site-packages, .tox

@@ -1,4 +1,5 @@
-from torch_inspect import inspect
+import io
+from torch_inspect import inspect, summary
 from torch_inspect.inspect import LayerInfo
 
 
@@ -26,3 +27,33 @@ def test_inspect(simple_model):
         L('Linear-5', [bsize, 84], [bsize, 10], True, 850),
     ]
     assert r == expected
+
+
+expected_summary = """
+
+----------------------------------------------------------------
+        Layer (type)               Output Shape         Param #
+================================================================
+            Conv2d-1            [-1, 6, 30, 30]              60
+            Conv2d-2           [-1, 16, 13, 13]             880
+            Linear-3                  [-1, 120]          69,240
+            Linear-4                   [-1, 84]          10,164
+            Linear-5                   [-1, 10]             850
+================================================================
+Total params: 81,194
+Trainable params: 81,194
+Non-trainable params: 0
+----------------------------------------------------------------
+Input size (MB): 0.00
+Forward/backward pass size (MB): 0.06
+Params size (MB): 0.31
+Estimated Total Size (MB): 0.38
+----------------------------------------------------------------
+"""
+
+
+def test_summary(simple_model):
+    with io.StringIO() as buf:
+        summary(simple_model, (1, 32, 32), device='cpu', file=buf, flush=True)
+        r = buf.getvalue()
+        assert r == expected_summary

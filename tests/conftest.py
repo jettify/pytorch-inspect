@@ -35,6 +35,37 @@ class SimpleNet(nn.Module):
         return num_features
 
 
+class MultiInputNet(nn.Module):
+    def __init__(self):
+        super(MultiInputNet, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+        )
+
+    def forward(self, x, y):
+        x1 = self.features(x)
+        x2 = self.features(y)
+        return x1, x2
+
+
+class LSTMTagger(nn.Module):
+
+    def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size):
+        super(LSTMTagger, self).__init__()
+        self.hidden_dim = hidden_dim
+        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim)
+        self.hidden2tag = nn.Linear(hidden_dim, tagset_size)
+
+    def forward(self, sentence):
+        embeds = self.word_embeddings(sentence)
+        lstm_out, _ = self.lstm(embeds.view(len(sentence), 1, -1))
+        tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
+        tag_scores = F.log_softmax(tag_space, dim=1)
+        return tag_scores
+
+
 @pytest.fixture(scope='session')
 def simple_model():
     net = SimpleNet()
@@ -44,4 +75,16 @@ def simple_model():
 @pytest.fixture(scope='session')
 def mobilenet():
     model = torchvision.models.mobilenet_v2()
+    return model
+
+
+@pytest.fixture(scope='session')
+def multi_input_net():
+    model = MultiInputNet()
+    return model
+
+
+@pytest.fixture(scope='session')
+def lstm_tagger():
+    model = LSTMTagger(6, 6, 5, 3)
     return model

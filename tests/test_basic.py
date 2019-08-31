@@ -1,6 +1,13 @@
 import io
+
+import pytest
 from torch_inspect import inspect, summary
 from torch_inspect.inspect import LayerInfo
+
+
+def test_inspect_wrong_device(simple_model):
+    with pytest.raises(ValueError):
+        inspect(simple_model, (1, 32, 32), device='tpu')
 
 
 def test_inspect(simple_model):

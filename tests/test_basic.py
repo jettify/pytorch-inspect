@@ -36,19 +36,6 @@ def test_inspect(simple_model):
     assert r == expected
 
 
-def test_inspect_lstm(lstm_tagger):
-    r = inspect(lstm_tagger, (1, 16, 16), device='cpu')
-    L = LayerInfo
-
-    expected = [
-        L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], True, 10),
-        L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], False, 0),
-        L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], True, 10),
-        L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], False, 0),
-    ]
-    assert r == expected
-
-
 def test_inspect_multi_input(multi_input_net):
     r = inspect(multi_input_net, [(1, 16, 16), (1, 28, 28)], device='cpu')
     L = LayerInfo

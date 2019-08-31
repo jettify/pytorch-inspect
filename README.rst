@@ -1,7 +1,7 @@
 torch-inspect
 =============
-.. image:: https://travis-ci.com/jettify/torch-inspect.svg?branch=master
-    :target: https://travis-ci.com/jettify/torch-inspect
+.. image:: https://travis-ci.com/jettify/pytorch-inspect.svg?branch=master
+    :target: https://travis-ci.com/jettify/pytorch-inspect
 
 
 `torch-inspect` -- collection of utility functions to inspect low level

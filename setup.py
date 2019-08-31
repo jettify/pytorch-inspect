@@ -1,7 +1,7 @@
 import os
 import re
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 install_requires = ['torch==1.1.0.post2']
@@ -38,23 +38,23 @@ classifiers = [
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Operating System :: OS Independent',
-    'Development Status :: 4 - Beta',
+    'Development Status :: 3 - Alpha',
 ]
 
 
 setup(
     name='torch-inspect',
     version=read_version(),
-    description=(''),
+    description=('Utility functions that prints a summary of a model.'),
     long_description='\n\n'.join((read('README.rst'), read('CHANGES.rst'))),
     classifiers=classifiers,
     platforms=['POSIX'],
     author='Nikolay Novik',
     author_email='nickolainovik@gmail.com',
-    url='',
+    url='https://github.com/jettify/torch-inspect',
     download_url='https://pypi.python.org/pypi/torch-inspect',
     license='Apache 2',
-    packages=['torch_inspect'],
+    packages=find_packages(),
     install_requires=install_requires,
     keywords=['torch-inspect', 'pytorch'],
     zip_safe=True,

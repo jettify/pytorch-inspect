@@ -107,13 +107,12 @@ Requirements
 * PyTorch_ 1.0+
 
 
+References and Thanks
+---------------------
+This package is based on pytorch-summary_ and  PyTorch issue_
+
+
 .. _Python: https://www.python.org
 .. _PyTorch: https://github.com/pytorch/pytorch
-
-
-References
-----------
-https://github.com/pytorch/pytorch/issues/2001
-The idea for this package sparked from this PyTorch issue.
-Thanks to @ncullen93 and @HTLife.
-For Model Size Estimation @jacobkimmel (details here)
+.. _pytorch-summary:  https://github.com/sksq96/pytorch-summary
+.. _issue:  https://github.com/pytorch/pytorch/issues/2001

@@ -1,3 +1,4 @@
+import pprint
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_inspect as ti
@@ -32,6 +33,9 @@ class SimpleNet(nn.Module):
 def main():
     net = SimpleNet()
     ti.summary(net, (1, 32, 32), device='cpu')
+
+    info = ti.inspect(net, (1, 32, 32), device='cpu')
+    pprint.pprint(info)
 
 
 if __name__ == '__main__':

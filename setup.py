@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 
 
-install_requires = ['torch==1.1.0.post2']
+install_requires = ['torch==1.1.0']
 
 
 if sys.version_info < (3, 6, 0):

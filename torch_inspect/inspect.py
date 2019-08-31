@@ -90,6 +90,14 @@ def _infer_dtype(device: str) -> _FTensorType:
     return dtype
 
 
+def _has_weight(module: nn.Module) -> bool:
+    return hasattr(module, 'weight') and hasattr(module.weight, 'size')
+
+
+def _has_bias(module: nn.Module) -> bool:
+    return hasattr(module, 'weight') and hasattr(module.weight, 'size')
+
+
 class _ModuleHook:
     def __init__(self, batch_size: int):
         self.batch_size = batch_size
@@ -98,30 +106,33 @@ class _ModuleHook:
     def hook(
         self, module: nn.Module, input: _FTensorType, output: _FTensorType
     ) -> None:
-        class_name = str(module.__class__).split('.')[-1].split("'")[0]
+
+        # make layer name
         module_idx = len(self.layer_list)
+        class_name = str(module.__class__).split('.')[-1].split("'")[0]
+        name = f'{class_name}-{module_idx + 1}'
 
-        input_shape = list(input[0].size())
-        input_shape[0] = self.batch_size
+        # calculate input shape
+        input_shape = [self.batch_size] + list(input[0].size())[1:]
 
+        # calculate output shape
         if isinstance(output, (list, tuple)):
             output_shape = [[-1] + list(o.size())[1:] for o in output]
         else:
-            output_shape = list(output.size())
-            output_shape[0] = self.batch_size
+            output_shape = [self.batch_size] + list(output.size())[1:]
 
+        # calculate number of params
         params = 0
         trainable = False
-        if hasattr(module, 'weight') and hasattr(module.weight, 'size'):
-            params += int(
-                torch.prod(torch.LongTensor(list(module.weight.size())))
-            )
+
+        if _has_weight(module):
+            params += np.prod(module.weight.size())
             trainable = module.weight.requires_grad
 
-        if hasattr(module, 'bias') and hasattr(module.bias, 'size'):
-            params += torch.prod(torch.LongTensor(list(module.bias.size())))
+        if _has_bias(module):
+            params += np.prod(module.bias.size())
 
-        name = f'{class_name}-{module_idx + 1}'
+        # recored result
         layer = LayerInfo(
             name, input_shape, output_shape, trainable, int(params)
         )
@@ -134,7 +145,6 @@ def inspect(
     batch_size: int = -1,
     device: str = CPU,
 ) -> List[LayerInfo]:
-
     hook = _ModuleHook(batch_size)
     handles: List[RemovableHandle] = []
 
@@ -144,18 +154,22 @@ def inspect(
             handles.append(handle)
 
     dtype = _infer_dtype(device)
+
     # multiple inputs to the network
     if isinstance(input_size, tuple):
         input_size = [input_size]
 
-    # batch_size of 2 for batchnorm
+    # make fake input with batch_size of 2 for batchnorm
     x = [torch.rand(2, *in_size).type(dtype) for in_size in input_size]
 
+    # attach hooks to each applicable layer
     model.apply(register_hook)
 
+    # forward pass
     try:
         model(*x)
     finally:
+        # cleanup all attached hooks, to move model to original state
         for h in handles:
             h.remove()
 

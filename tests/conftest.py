@@ -34,8 +34,7 @@ class MultiInputNet(nn.Module):
     def __init__(self):
         super(MultiInputNet, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1), nn.ReLU()
         )
 
     def forward(self, x, y):
@@ -44,8 +43,59 @@ class MultiInputNet(nn.Module):
         return x1, x2
 
 
-class LSTMTagger(nn.Module):
+class SimpleBatchNormModel(nn.Module):
+    def __init__(self):
+        super(SimpleBatchNormModel, self).__init__()
+        hidden = 15
+        input_size = 20
+        self.main = nn.Sequential(
+            nn.Linear(input_size, hidden, bias=False),
+            nn.BatchNorm1d(hidden),
+            nn.Linear(hidden, hidden, bias=False),
+            nn.BatchNorm1d(hidden),
+            nn.Linear(hidden, 1),
+        )
 
+    def forward(self, input):
+        output = self.main(input)
+        return output
+
+
+class Generator(nn.Module):
+    def __init__(self, ngpu=1):
+        super(Generator, self).__init__()
+        nz = 100
+        ngf = 64
+        nc = 3
+        self.ngpu = ngpu
+        self.main = nn.Sequential(
+            nn.ConvTranspose2d(nz, ngf * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(ngf * 8),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(ngf * 8, ngf * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 4),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(ngf * 4, ngf * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf * 2),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(ngf * 2, ngf, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf),
+            nn.ReLU(True),
+            nn.ConvTranspose2d(ngf, nc, 4, 2, 1, bias=False),
+            nn.Tanh(),
+        )
+
+    def forward(self, input):
+        if input.is_cuda and self.ngpu > 1:
+            output = nn.parallel.data_parallel(
+                self.main, input, range(self.ngpu)
+            )
+        else:
+            output = self.main(input)
+        return output
+
+
+class LSTMTagger(nn.Module):
     def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
@@ -82,4 +132,16 @@ def multi_input_net():
 @pytest.fixture(scope='session')
 def lstm_tagger():
     model = LSTMTagger(6, 6, 5, 3)
+    return model
+
+
+@pytest.fixture(scope='session')
+def netgenerator():
+    model = Generator()
+    return model
+
+
+@pytest.fixture(scope='session')
+def netbatchnorm():
+    model = SimpleBatchNormModel()
     return model

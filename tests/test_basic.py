@@ -2,7 +2,7 @@ import io
 
 import pytest
 from torch_inspect import inspect, summary
-from torch_inspect.inspect import LayerInfo
+from torch_inspect.inspect import LayerInfo, NetworkInfo
 
 
 def test_inspect_wrong_device(simple_model):
@@ -15,11 +15,11 @@ def test_inspect(simple_model):
     L = LayerInfo
 
     expected = [
-        L('Conv2d-1', [-1, 1, 32, 32], [-1, 6, 30, 30], True, 60),
-        L('Conv2d-2', [-1, 6, 15, 15], [-1, 16, 13, 13], True, 880),
-        L('Linear-3', [-1, 576], [-1, 120], True, 69240),
-        L('Linear-4', [-1, 120], [-1, 84], True, 10164),
-        L('Linear-5', [-1, 84], [-1, 10], True, 850),
+        L('Conv2d-1', [-1, 1, 32, 32], [-1, 6, 30, 30], 60, 0),
+        L('Conv2d-2', [-1, 6, 15, 15], [-1, 16, 13, 13], 880, 0),
+        L('Linear-3', [-1, 576], [-1, 120], 69240, 0),
+        L('Linear-4', [-1, 120], [-1, 84], 10164, 0),
+        L('Linear-5', [-1, 84], [-1, 10], 850, 0),
     ]
 
     assert r == expected
@@ -27,11 +27,11 @@ def test_inspect(simple_model):
     bsize = 10
     r = inspect(simple_model, (1, 32, 32), bsize, device='cpu')
     expected = [
-        L('Conv2d-1', [bsize, 1, 32, 32], [bsize, 6, 30, 30], True, 60),
-        L('Conv2d-2', [bsize, 6, 15, 15], [bsize, 16, 13, 13], True, 880),
-        L('Linear-3', [bsize, 576], [bsize, 120], True, 69240),
-        L('Linear-4', [bsize, 120], [bsize, 84], True, 10164),
-        L('Linear-5', [bsize, 84], [bsize, 10], True, 850),
+        L('Conv2d-1', [bsize, 1, 32, 32], [bsize, 6, 30, 30], 60, 0),
+        L('Conv2d-2', [bsize, 6, 15, 15], [bsize, 16, 13, 13], 880, 0),
+        L('Linear-3', [bsize, 576], [bsize, 120], 69240, 0),
+        L('Linear-4', [bsize, 120], [bsize, 84], 10164, 0),
+        L('Linear-5', [bsize, 84], [bsize, 10], 850, 0),
     ]
     assert r == expected
 
@@ -41,10 +41,10 @@ def test_inspect_multi_input(multi_input_net):
     L = LayerInfo
 
     expected = [
-        L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], True, 10),
-        L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], False, 0),
-        L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], True, 10),
-        L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], False, 0),
+        L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], 10, 0),
+        L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], 0, 0),
+        L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], 10, 0),
+        L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], 0, 0),
     ]
     assert r == expected
 
@@ -77,3 +77,20 @@ def test_summary(simple_model):
         summary(simple_model, (1, 32, 32), device='cpu', file=buf, flush=True)
         r = buf.getvalue()
         assert r == expected_summary
+
+
+def test_inspect_net_with_batch_norm(netbatchnorm):
+    r = inspect(netbatchnorm, (20,), device='cpu')
+    L = LayerInfo
+
+    expected = [
+        L('Linear-1', [-1, 20], [-1, 15], 300, 0),
+        L('BatchNorm1d-2', [-1, 15], [-1, 15], 30, 30),
+        L('Linear-3', [-1, 15], [-1, 15], 225, 0),
+        L('BatchNorm1d-4', [-1, 15], [-1, 15], 30, 30),
+        L('Linear-5', [-1, 15], [-1, 1], 16, 0),
+    ]
+    assert r == expected
+    network_info = summary(netbatchnorm, (20,), device='cpu')
+    expected_info = NetworkInfo(661, 601, 80, 488, 2644, 3212)
+    assert expected_info == network_info

@@ -20,7 +20,7 @@ bandit:
 	bandit -r ./torch_inspect
 
 mypy:
-	mypy torch_inspect --ignore-missing-imports --disallow-untyped-calls --strict
+	mypy torch_inspect --ignore-missing-imports --strict
 
 cov cover coverage: flake checkrst pyroma bandit
 	pytest -sv -vv --cov=torch_inspect --cov-report=term --cov-report=html ./tests

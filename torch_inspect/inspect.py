@@ -1,7 +1,7 @@
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import List, IO, Union, Type
+from typing import List, IO, Union, Tuple
 
 import numpy as np
 import torch
@@ -13,8 +13,7 @@ from torch.utils.hooks import RemovableHandle
 __all__ = ('LayerInfo', 'NetworkInfo', 'inspect', 'summary')
 
 
-CPU = 'cpu'
-CUDA = 'cuda'
+InputShape = Tuple[int, ...]
 
 
 @dataclass
@@ -37,7 +36,9 @@ class NetworkInfo:
 
 
 def make_network_info(
-    info_list: List[LayerInfo], input_size: List[int], batch_size: int = -1
+    info_list: List[LayerInfo],
+    input_size: Union[InputShape, List[InputShape]],
+    batch_size: int = -1,
 ) -> NetworkInfo:
     trainable_params = 0
     total_params = 0
@@ -73,22 +74,6 @@ def should_attach_hook(model: nn.Module, module: nn.Module) -> bool:
     return v
 
 
-_FTensorType = Type[Union[torch.cuda.FloatTensor, torch.FloatTensor]]
-
-
-def _infer_dtype(device: str) -> _FTensorType:
-    device = device.lower()
-    if device not in (CUDA, CPU):
-        msg = 'Input device is not valid, please specify "cuda" or "cpu"'
-        raise ValueError(msg)
-
-    if device == CUDA and torch.cuda.is_available():
-        dtype = torch.cuda.FloatTensor
-    else:
-        dtype = torch.FloatTensor
-    return dtype
-
-
 def _has_weight(module: nn.Module) -> bool:
     return hasattr(module, 'weight') and hasattr(module.weight, 'size')
 
@@ -121,7 +106,10 @@ class _ModuleHook:
         self.layer_list: List[LayerInfo] = []
 
     def hook(
-        self, module: nn.Module, input: _FTensorType, output: _FTensorType
+        self,
+        module: nn.Module,
+        input: torch.FloatTensor,
+        output: torch.FloatTensor,
     ) -> None:
 
         # make layer name
@@ -177,29 +165,33 @@ class _ModuleHook:
 
 def inspect(
     model: nn.Module,
-    input_size: List[int],
+    input_size: Union[InputShape, List[InputShape]],
     batch_size: int = -1,
-    device: str = CPU,
 ) -> List[LayerInfo]:
     hook = _ModuleHook(batch_size)
     handles: List[RemovableHandle] = []
 
     def register_hook(module: nn.Module) -> None:
         if should_attach_hook(model, module):
-            handle: RemovableHandle = module.register_forward_hook(hook.hook)
-            handles.append(handle)
+            h: RemovableHandle = module.register_forward_hook(  # type: ignore
+                hook.hook
+            )
+            handles.append(h)
 
-    dtype = _infer_dtype(device)
+    dtype = torch.FloatTensor
 
     # multiple inputs to the network
     if isinstance(input_size, tuple):
         input_size = [input_size]
 
     # make fake input with batch_size of 2 for batchnorm
-    x = [torch.rand(2, *in_size).type(dtype) for in_size in input_size]
+    x = [
+        torch.rand(2, *in_size).type(dtype)  # type: ignore
+        for in_size in input_size
+    ]
 
     # attach hooks to each applicable layer
-    model.apply(register_hook)
+    model.apply(register_hook)  # type: ignore
 
     # forward pass
     try:
@@ -207,20 +199,19 @@ def inspect(
     finally:
         # cleanup all attached hooks, to move model to original state
         for h in handles:
-            h.remove()
+            h.remove()  # type: ignore
 
     return hook.layer_list
 
 
 def summary(
     model: nn.Module,
-    input_size: List[int],
+    input_size: Union[InputShape, List[InputShape]],
     batch_size: int = -1,
-    device: str = CPU,
     file: IO[str] = sys.stdout,
     flush: bool = False,
 ) -> NetworkInfo:
-    summary = inspect(model, input_size, batch_size=batch_size, device=device)
+    summary = inspect(model, input_size, batch_size=batch_size)
     n = make_network_info(summary, input_size, batch_size)
     print_ = partial(print, file=file, flush=flush)
     print_('\n')

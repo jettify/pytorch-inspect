@@ -1,17 +1,11 @@
 import io
 
-import pytest
 from torch_inspect import inspect, summary
 from torch_inspect.inspect import LayerInfo, NetworkInfo
 
 
-def test_inspect_wrong_device(simple_model):
-    with pytest.raises(ValueError):
-        inspect(simple_model, (1, 32, 32), device='tpu')
-
-
 def test_inspect(simple_model):
-    r = inspect(simple_model, (1, 32, 32), device='cpu')
+    r = inspect(simple_model, (1, 32, 32))
     L = LayerInfo
 
     expected = [
@@ -25,7 +19,7 @@ def test_inspect(simple_model):
     assert r == expected
 
     bsize = 10
-    r = inspect(simple_model, (1, 32, 32), bsize, device='cpu')
+    r = inspect(simple_model, (1, 32, 32), bsize)
     expected = [
         L('Conv2d-1', [bsize, 1, 32, 32], [bsize, 6, 30, 30], 60, 0),
         L('Conv2d-2', [bsize, 6, 15, 15], [bsize, 16, 13, 13], 880, 0),
@@ -37,7 +31,7 @@ def test_inspect(simple_model):
 
 
 def test_inspect_multi_input(multi_input_net):
-    r = inspect(multi_input_net, [(1, 16, 16), (1, 28, 28)], device='cpu')
+    r = inspect(multi_input_net, [(1, 16, 16), (1, 28, 28)])
     L = LayerInfo
 
     expected = [
@@ -74,13 +68,13 @@ Estimated Total Size (MB): 0.38
 
 def test_summary(simple_model):
     with io.StringIO() as buf:
-        summary(simple_model, (1, 32, 32), device='cpu', file=buf, flush=True)
+        summary(simple_model, (1, 32, 32), file=buf, flush=True)
         r = buf.getvalue()
         assert r == expected_summary
 
 
 def test_inspect_net_with_batch_norm(netbatchnorm):
-    r = inspect(netbatchnorm, (20,), device='cpu')
+    r = inspect(netbatchnorm, (20,))
     L = LayerInfo
 
     expected = [
@@ -91,6 +85,6 @@ def test_inspect_net_with_batch_norm(netbatchnorm):
         L('Linear-5', [-1, 15], [-1, 1], 16, 0),
     ]
     assert r == expected
-    network_info = summary(netbatchnorm, (20,), device='cpu')
+    network_info = summary(netbatchnorm, (20,))
     expected_info = NetworkInfo(661, 601, 80, 488, 2644, 3212)
     assert expected_info == network_info

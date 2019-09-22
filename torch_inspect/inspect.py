@@ -22,8 +22,8 @@ class LayerInfo:
     name: str
     input_shape: List[int]
     output_shape: List[int]
-    trainable: bool
-    nb_params: int
+    trainable_params: int
+    non_trainable_params: int
 
 
 @dataclass
@@ -43,10 +43,9 @@ def make_network_info(
     total_params = 0
     total_output = 0
     for layer in info_list:
-        total_params += layer.nb_params
+        total_params += layer.trainable_params + layer.non_trainable_params
         total_output += abs(np.prod(layer.output_shape))
-        if layer.trainable:
-            trainable_params += layer.nb_params
+        trainable_params += layer.trainable_params
 
     # assume 4 bytes/number (float on cuda).
     total_input_size = np.prod(input_size) * abs(batch_size) * 4
@@ -95,7 +94,25 @@ def _has_weight(module: nn.Module) -> bool:
 
 
 def _has_bias(module: nn.Module) -> bool:
-    return hasattr(module, 'weight') and hasattr(module.weight, 'size')
+    return hasattr(module, 'bias') and hasattr(module.bias, 'size')
+
+
+def _has_running_mean(module: nn.Module) -> bool:
+    return (
+        hasattr(module, 'running_mean')
+        and hasattr(module.running_mean, 'size')
+        and hasattr(module, 'track_running_stats')
+        and module.track_running_stats
+    )
+
+
+def _has_running_var(module: nn.Module) -> bool:
+    return (
+        hasattr(module, 'running_var')
+        and hasattr(module.running_var, 'size')
+        and hasattr(module, 'track_running_stats')
+        and module.track_running_stats
+    )
 
 
 class _ModuleHook:
@@ -122,19 +139,38 @@ class _ModuleHook:
             output_shape = [self.batch_size] + list(output.size())[1:]
 
         # calculate number of params
-        params = 0
-        trainable = False
+        trainable_params = 0
+        non_trainable_params = 0
 
         if _has_weight(module):
-            params += np.prod(module.weight.size())
-            trainable = module.weight.requires_grad
+            params = np.prod(module.weight.size())
+            if module.weight.requires_grad:
+                trainable_params += params
+            else:
+                non_trainable_params += params
 
         if _has_bias(module):
-            params += np.prod(module.bias.size())
+            params = np.prod(module.bias.size())
+            if module.bias.requires_grad:
+                trainable_params += params
+            else:
+                non_trainable_params += params
+
+        if _has_running_mean(module):
+            params = np.prod(module.running_mean.size())
+            non_trainable_params += params
+
+        if _has_running_var(module):
+            params = np.prod(module.running_var.size())
+            non_trainable_params += params
 
         # recored result
         layer = LayerInfo(
-            name, input_shape, output_shape, trainable, int(params)
+            name,
+            input_shape,
+            output_shape,
+            int(trainable_params),
+            int(non_trainable_params),
         )
         self.layer_list.append(layer)
 
@@ -183,7 +219,7 @@ def summary(
     device: str = CPU,
     file: IO[str] = sys.stdout,
     flush: bool = False,
-) -> None:
+) -> NetworkInfo:
     summary = inspect(model, input_size, batch_size=batch_size, device=device)
     n = make_network_info(summary, input_size, batch_size)
     print_ = partial(print, file=file, flush=flush)
@@ -196,10 +232,9 @@ def summary(
     print_('================================================================')
 
     for layer in summary:
+        total_params = layer.trainable_params + layer.non_trainable_params
         line_new = '{:>20}  {:>25} {:>15}'.format(
-            layer.name,
-            str(layer.output_shape),
-            '{0:,}'.format(layer.nb_params),
+            layer.name, str(layer.output_shape), '{0:,}'.format(total_params)
         )
         print_(line_new)
     MB = 1024 ** 2
@@ -213,3 +248,4 @@ def summary(
     print_(f'Params size (MB): {n.total_params_size / MB :0.2f}')
     print_(f'Estimated Total Size (MB): {n.total_size / MB:0.2f}')
     print_('----------------------------------------------------------------')
+    return n

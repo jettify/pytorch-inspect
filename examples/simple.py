@@ -32,9 +32,9 @@ class SimpleNet(nn.Module):
 
 def main():
     net = SimpleNet()
-    ti.summary(net, (1, 32, 32), device='cpu')
+    ti.summary(net, (1, 32, 32))
 
-    info = ti.inspect(net, (1, 32, 32), device='cpu')
+    info = ti.inspect(net, (1, 32, 32))
     pprint.pprint(info)
 
 

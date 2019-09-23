@@ -89,11 +89,11 @@ For programmatic access to network information there is ``inspect`` function:
 
 .. code::
 
-    [LayerInfo(name='Conv2d-1', input_shape=[10, 1, 32, 32], output_shape=[10, 6, 30, 30], trainable=True, nb_params=60),
-     LayerInfo(name='Conv2d-2', input_shape=[10, 6, 15, 15], output_shape=[10, 16, 13, 13], trainable=True, nb_params=880),
-     LayerInfo(name='Linear-3', input_shape=[10, 576], output_shape=[10, 120], trainable=True, nb_params=69240),
-     LayerInfo(name='Linear-4', input_shape=[10, 120], output_shape=[10, 84], trainable=True, nb_params=10164),
-     LayerInfo(name='Linear-5', input_shape=[10, 84], output_shape=[10, 10], trainable=True, nb_params=850)]
+     [LayerInfo(name='Conv2d-1', input_shape=[-1, 1, 32, 32], output_shape=[-1, 6, 30, 30], trainable_params=60, non_trainable_params=0),
+      LayerInfo(name='Conv2d-2', input_shape=[-1, 6, 15, 15], output_shape=[-1, 16, 13, 13], trainable_params=880, non_trainable_params=0),
+      LayerInfo(name='Linear-3', input_shape=[-1, 576], output_shape=[-1, 120], trainable_params=69240, non_trainable_params=0),
+      LayerInfo(name='Linear-4', input_shape=[-1, 120], output_shape=[-1, 84], trainable_params=10164, non_trainable_params=0),
+      LayerInfo(name='Linear-5', input_shape=[-1, 84], output_shape=[-1, 10], trainable_params=850, non_trainable_params=0)]
 
 
 Installation

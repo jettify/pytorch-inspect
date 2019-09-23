@@ -6,7 +6,8 @@ torch-inspect
     :target: https://codecov.io/gh/jettify/pytorch-inspect
 .. image:: https://img.shields.io/pypi/pyversions/torch-inspect.svg
     :target: https://pypi.org/project/torch-inspect
-
+.. image:: https://img.shields.io/pypi/v/torch-inspect.svg
+    :target: https://pypi.python.org/pypi/torch-inspect
 
 **torch-inspect** -- collection of utility functions to inspect low level information of neural network for PyTorch_
 

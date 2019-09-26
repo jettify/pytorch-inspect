@@ -111,6 +111,19 @@ class LSTMTagger(nn.Module):
         return tag_scores
 
 
+class SimpleConv(nn.Module):
+    def __init__(self):
+        super(SimpleConv, self).__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 1, kernel_size=3, stride=1, padding=1), nn.ReLU()
+        )
+
+    def forward(self, x, y):
+        x1 = self.features(x)
+        x2 = self.features(y)
+        return x1, x2
+
+
 @pytest.fixture(scope='session')
 def simple_model():
     net = SimpleNet()
@@ -144,4 +157,10 @@ def netgenerator():
 @pytest.fixture(scope='session')
 def netbatchnorm():
     model = SimpleBatchNormModel()
+    return model
+
+
+@pytest.fixture(scope='session')
+def simpleconv():
+    model = SimpleConv()
     return model

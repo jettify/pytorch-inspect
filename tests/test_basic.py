@@ -88,3 +88,16 @@ def test_inspect_net_with_batch_norm(netbatchnorm):
     network_info = summary(netbatchnorm, (20,))
     expected_info = NetworkInfo(661, 601, 80, 488, 2644, 3212)
     assert expected_info == network_info
+
+
+def test_simpleconv(simpleconv):
+    r = inspect(simpleconv, [(1, 16, 16), (1, 28, 28)])
+    L = LayerInfo
+    expected = [
+        L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], 10, 0),
+        L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], 0, 0),
+        L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], 10, 0),
+        L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], 0, 0),
+    ]
+    expected = []
+    assert r == expected

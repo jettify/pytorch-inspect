@@ -99,5 +99,4 @@ def test_simpleconv(simpleconv):
         L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], 10, 0),
         L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], 0, 0),
     ]
-    expected = []
     assert r == expected

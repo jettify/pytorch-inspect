@@ -1,7 +1,7 @@
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import List, IO, Union, Tuple
+from typing import List, IO, Union, Tuple, Type, Callable
 
 import numpy as np
 import torch
@@ -166,6 +166,8 @@ class _ModuleHook:
 def inspect(
     model: nn.Module,
     input_size: Union[InputShape, List[InputShape]],
+    input_dtype: Type[torch.Tensor] = torch.FloatTensor,
+    input_initializer: Callable[..., torch.Tensor] = torch.rand,
     batch_size: int = -1,
 ) -> List[LayerInfo]:
     hook = _ModuleHook(batch_size)
@@ -178,15 +180,13 @@ def inspect(
             )
             handles.append(h)
 
-    dtype = torch.FloatTensor
-
     # multiple inputs to the network
     if isinstance(input_size, tuple):
         input_size = [input_size]
 
     # make fake input with batch_size of 2 for batchnorm
     x = [
-        torch.rand(2, *in_size).type(dtype)  # type: ignore
+        input_initializer(2, *in_size).type(input_dtype)  # type: ignore
         for in_size in input_size
     ]
 
@@ -207,11 +207,19 @@ def inspect(
 def summary(
     model: nn.Module,
     input_size: Union[InputShape, List[InputShape]],
+    input_dtype: Type[torch.Tensor] = torch.FloatTensor,
+    input_initializer: Callable[..., torch.Tensor] = torch.rand,
     batch_size: int = -1,
     file: IO[str] = sys.stdout,
     flush: bool = False,
 ) -> NetworkInfo:
-    summary = inspect(model, input_size, batch_size=batch_size)
+    summary = inspect(
+        model,
+        input_size,
+        input_dtype=input_dtype,
+        input_initializer=input_initializer,
+        batch_size=batch_size,
+    )
     n = make_network_info(summary, input_size, batch_size)
     print_ = partial(print, file=file, flush=flush)
     print_('\n')
@@ -228,7 +236,7 @@ def summary(
             layer.name, str(layer.output_shape), '{0:,}'.format(total_params)
         )
         print_(line_new)
-    MB = 1024 ** 2
+    MB = 1024.0 ** 2
     print_('================================================================')
     print_(f'Total params: {n.total_params:,}')
     print_(f'Trainable params: {n.trainable_params:,}')

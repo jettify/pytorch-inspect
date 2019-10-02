@@ -5,10 +5,10 @@ flake:
 	flake8 torch_inspect tests examples setup.py
 
 test: flake
-	pytest -s
+	pytest -sv
 
 vtest:
-	pytest -v
+	pytest -sv
 
 checkrst:
 	python setup.py check --restructuredtext

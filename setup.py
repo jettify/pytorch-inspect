@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 
 
-install_requires = ['torch==1.1.0']
+install_requires = ['torch>=1.1.0']
 
 PY36 = (3, 6, 0)
 PY37 = (3, 7, 0)

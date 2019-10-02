@@ -74,14 +74,6 @@ def should_attach_hook(model: nn.Module, module: nn.Module) -> bool:
     return v
 
 
-def _has_weight(module: nn.Module) -> bool:
-    return hasattr(module, 'weight') and hasattr(module.weight, 'size')
-
-
-def _has_bias(module: nn.Module) -> bool:
-    return hasattr(module, 'bias') and hasattr(module.bias, 'size')
-
-
 def _has_running_mean(module: nn.Module) -> bool:
     return (
         hasattr(module, 'running_mean')
@@ -130,16 +122,9 @@ class _ModuleHook:
         trainable_params = 0
         non_trainable_params = 0
 
-        if _has_weight(module):
-            params = np.prod(module.weight.size())
-            if module.weight.requires_grad:
-                trainable_params += params
-            else:
-                non_trainable_params += params
-
-        if _has_bias(module):
-            params = np.prod(module.bias.size())
-            if module.bias.requires_grad:
+        for _, param in module.named_parameters():  # type: ignore
+            params = np.prod(param.size())
+            if param.requires_grad:
                 trainable_params += params
             else:
                 non_trainable_params += params

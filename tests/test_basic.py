@@ -6,14 +6,15 @@ from torch_inspect.inspect import LayerInfo as L, NetworkInfo
 
 
 def test_inspect(simple_model):
+    bs = -1  # default batch size
     r = inspect(simple_model, (1, 32, 32))
 
     expected = [
-        L('Conv2d-1', [-1, 1, 32, 32], [-1, 6, 30, 30], 60, 0),
-        L('Conv2d-2', [-1, 6, 15, 15], [-1, 16, 13, 13], 880, 0),
-        L('Linear-3', [-1, 576], [-1, 120], 69240, 0),
-        L('Linear-4', [-1, 120], [-1, 84], 10164, 0),
-        L('Linear-5', [-1, 84], [-1, 10], 850, 0),
+        L('Conv2d-1', [bs, 1, 32, 32], [bs, 6, 30, 30], 60, 0),
+        L('Conv2d-2', [bs, 6, 15, 15], [bs, 16, 13, 13], 880, 0),
+        L('Linear-3', [bs, 576], [bs, 120], 69240, 0),
+        L('Linear-4', [bs, 120], [bs, 84], 10164, 0),
+        L('Linear-5', [bs, 84], [bs, 10], 850, 0),
     ]
 
     assert r == expected
@@ -37,13 +38,13 @@ def test_inspect(simple_model):
 
 
 def test_inspect_multi_input(multi_input_net):
-    r = inspect(multi_input_net, [(1, 16, 16), (1, 28, 28)])
-
+    bs = 10
+    r = inspect(multi_input_net, [(1, 16, 16), (1, 28, 28)], batch_size=bs)
     expected = [
-        L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], 10, 0),
-        L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], 0, 0),
-        L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], 10, 0),
-        L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], 0, 0),
+        L('Conv2d-1', [bs, 1, 16, 16], [bs, 1, 16, 16], 10, 0),
+        L('ReLU-2', [bs, 1, 16, 16], [bs, 1, 16, 16], 0, 0),
+        L('Conv2d-3', [bs, 1, 28, 28], [bs, 1, 28, 28], 10, 0),
+        L('ReLU-4', [bs, 1, 28, 28], [bs, 1, 28, 28], 0, 0),
     ]
     assert r == expected
 
@@ -86,14 +87,15 @@ def test_summary(simple_model):
 
 
 def test_inspect_net_with_batch_norm(netbatchnorm):
-    r = inspect(netbatchnorm, (20,))
+    bs = 10
+    r = inspect(netbatchnorm, (20,), batch_size=bs)
 
     expected = [
-        L('Linear-1', [-1, 20], [-1, 15], 300, 0),
-        L('BatchNorm1d-2', [-1, 15], [-1, 15], 30, 30),
-        L('Linear-3', [-1, 15], [-1, 15], 225, 0),
-        L('BatchNorm1d-4', [-1, 15], [-1, 15], 30, 30),
-        L('Linear-5', [-1, 15], [-1, 1], 16, 0),
+        L('Linear-1', [bs, 20], [bs, 15], 300, 0),
+        L('BatchNorm1d-2', [bs, 15], [bs, 15], 30, 30),
+        L('Linear-3', [bs, 15], [bs, 15], 225, 0),
+        L('BatchNorm1d-4', [bs, 15], [bs, 15], 30, 30),
+        L('Linear-5', [bs, 15], [bs, 1], 16, 0),
     ]
     assert r == expected
     with io.StringIO() as buf:
@@ -106,10 +108,10 @@ def test_simpleconv(simpleconv):
     bs = -1
     r = inspect(simpleconv, [(1, 16, 16), (1, 28, 28)], batch_size=bs)
     expected = [
-        L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], 10, 0),
-        L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], 0, 0),
-        L('Conv2d-3', [-1, 1, 28, 28], [-1, 1, 28, 28], 10, 0),
-        L('ReLU-4', [-1, 1, 28, 28], [-1, 1, 28, 28], 0, 0),
+        L('Conv2d-1', [bs, 1, 16, 16], [bs, 1, 16, 16], 10, 0),
+        L('ReLU-2', [bs, 1, 16, 16], [bs, 1, 16, 16], 0, 0),
+        L('Conv2d-3', [bs, 1, 28, 28], [bs, 1, 28, 28], 10, 0),
+        L('ReLU-4', [bs, 1, 28, 28], [bs, 1, 28, 28], 0, 0),
     ]
     assert r == expected
 
@@ -126,7 +128,7 @@ def test_autoencoder(autoencoder):
         L('ReLU-6', [bs, 6, 28, 28], [bs, 6, 28, 28], 0, 0),
         L('ConvTranspose2d-7', [bs, 6, 28, 28], [bs, 3, 32, 32], 453, 0),
         L('ReLU-8', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0),
-        L('Sigmoid-9', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0),
+        L('Sigmoid-9', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0)
     ]
     assert r == expected
 

@@ -114,7 +114,9 @@ class _ModuleHook:
 
         # calculate output shape
         if isinstance(output, (list, tuple)):
-            output_shape = [[-1] + list(o.size())[1:] for o in output]
+            output_shape = [
+                [self.batch_size] + list(o.size())[1:] for o in output
+            ]
         else:
             output_shape = [self.batch_size] + list(output.size())[1:]
 

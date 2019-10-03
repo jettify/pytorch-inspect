@@ -103,7 +103,8 @@ def test_inspect_net_with_batch_norm(netbatchnorm):
 
 
 def test_simpleconv(simpleconv):
-    r = inspect(simpleconv, [(1, 16, 16), (1, 28, 28)])
+    bs = -1
+    r = inspect(simpleconv, [(1, 16, 16), (1, 28, 28)], batch_size=bs)
     expected = [
         L('Conv2d-1', [-1, 1, 16, 16], [-1, 1, 16, 16], 10, 0),
         L('ReLU-2', [-1, 1, 16, 16], [-1, 1, 16, 16], 0, 0),
@@ -114,16 +115,28 @@ def test_simpleconv(simpleconv):
 
 
 def test_autoencoder(autoencoder):
-    r = inspect(autoencoder, [(3, 32, 32)])
+    bs = 10
+    r = inspect(autoencoder, [(3, 32, 32)], batch_size=bs)
     expected = [
-        L('Conv2d-1', [-1, 3, 32, 32], [-1, 6, 28, 28], 456, 0),
-        L('ReLU-2', [-1, 6, 28, 28], [-1, 6, 28, 28], 0, 0),
-        L('Conv2d-3', [-1, 6, 28, 28], [-1, 16, 24, 24], 2416, 0),
-        L('ReLU-4', [-1, 16, 24, 24], [-1, 16, 24, 24], 0, 0),
-        L('ConvTranspose2d-5', [-1, 16, 24, 24], [-1, 6, 28, 28], 2406, 0),
-        L('ReLU-6', [-1, 6, 28, 28], [-1, 6, 28, 28], 0, 0),
-        L('ConvTranspose2d-7', [-1, 6, 28, 28], [-1, 3, 32, 32], 453, 0),
-        L('ReLU-8', [-1, 3, 32, 32], [-1, 3, 32, 32], 0, 0),
-        L('Sigmoid-9', [-1, 3, 32, 32], [-1, 3, 32, 32], 0, 0)
+        L('Conv2d-1', [bs, 3, 32, 32], [bs, 6, 28, 28], 456, 0),
+        L('ReLU-2', [bs, 6, 28, 28], [bs, 6, 28, 28], 0, 0),
+        L('Conv2d-3', [bs, 6, 28, 28], [bs, 16, 24, 24], 2416, 0),
+        L('ReLU-4', [bs, 16, 24, 24], [bs, 16, 24, 24], 0, 0),
+        L('ConvTranspose2d-5', [bs, 16, 24, 24], [bs, 6, 28, 28], 2406, 0),
+        L('ReLU-6', [bs, 6, 28, 28], [bs, 6, 28, 28], 0, 0),
+        L('ConvTranspose2d-7', [bs, 6, 28, 28], [bs, 3, 32, 32], 453, 0),
+        L('ReLU-8', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0),
+        L('Sigmoid-9', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0),
     ]
+    assert r == expected
+
+
+def test_rnn(rnn):
+    bs = 10
+    r = inspect(rnn, [(6, 3)], batch_size=bs, input_initializer=torch.zeros)
+    expected = [
+        L('RNN-1', [bs, 6, 3], [[bs, 6, 5], [bs, 2, 5]], 170, 0),
+        L('Linear-2', [bs, 5], [bs, 1], 6, 0),
+    ]
+    summary(rnn, [(6, 3)], batch_size=2, input_initializer=torch.zeros)
     assert r == expected

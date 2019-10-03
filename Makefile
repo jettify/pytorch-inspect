@@ -8,7 +8,7 @@ test: flake
 	pytest -sv
 
 vtest:
-	pytest -sv
+	pytest -sv -vv
 
 checkrst:
 	python setup.py check --restructuredtext

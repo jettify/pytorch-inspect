@@ -48,8 +48,12 @@ def make_network_info(
         total_output += abs(np.prod(layer.output_shape))
         trainable_params += layer.trainable_params
 
+    # multiple inputs to the network
+    if isinstance(input_size, tuple):
+        input_size = [input_size]
+
     # assume 4 bytes/number (float on cuda).
-    total_input_size = np.prod(input_size) * abs(batch_size) * 4
+    total_input_size = np.prod(sum(input_size, ())) * abs(batch_size) * 4
     # x2 for gradients
     total_output_size = 2 * total_output * 4
     total_params_size = total_params * 4
@@ -176,7 +180,6 @@ def inspect(
         input_initializer(2, *in_size).type(input_dtype)  # type: ignore
         for in_size in input_size
     ]
-
     # attach hooks to each applicable layer
     model.apply(register_hook)  # type: ignore
 

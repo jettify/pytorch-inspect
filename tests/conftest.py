@@ -221,3 +221,35 @@ class RNNModel(nn.Module):
 def rnn():
     net = RNNModel(3, 1, 5, 3)
     return net
+
+
+class MultiInputNet2(nn.Module):
+    def __init__(self):
+        super(MultiInputNet2, self).__init__()
+        self.pool = nn.MaxPool2d(2, 2)
+        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
+        self.conv2 = nn.Conv2d(64, 96, 3, padding=1)
+        self.conv3 = nn.Conv2d(96, 128, 3, padding=1)
+        self.conv4 = nn.Conv2d(128, 192, 3, padding=1)
+        self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.linear1 = nn.Linear(192, 64)
+        self.linear2 = nn.Linear(64, 4)
+
+    def forward(self, image, unrefined_bounding_box):
+        x = self.pool(F.relu(self.conv1(image)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = F.relu(self.conv4(x))
+
+        x = self.avg_pool(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = x + unrefined_bounding_box
+        return x
+
+
+@pytest.fixture(scope='session')
+def multi_input_net2():
+    net = MultiInputNet2()
+    return net

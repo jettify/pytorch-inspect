@@ -128,7 +128,7 @@ def test_autoencoder(autoencoder):
         L('ReLU-6', [bs, 6, 28, 28], [bs, 6, 28, 28], 0, 0),
         L('ConvTranspose2d-7', [bs, 6, 28, 28], [bs, 3, 32, 32], 453, 0),
         L('ReLU-8', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0),
-        L('Sigmoid-9', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0)
+        L('Sigmoid-9', [bs, 3, 32, 32], [bs, 3, 32, 32], 0, 0),
     ]
     assert r == expected
 
@@ -140,5 +140,31 @@ def test_rnn(rnn):
         L('RNN-1', [bs, 6, 3], [[bs, 6, 5], [bs, 2, 5]], 170, 0),
         L('Linear-2', [bs, 5], [bs, 1], 6, 0),
     ]
-    summary(rnn, [(6, 3)], batch_size=2, input_initializer=torch.zeros)
     assert r == expected
+
+
+def test_multi_input_net2(multi_input_net2):
+    bs = 10
+    r = inspect(multi_input_net2, [(3, 128, 1024), (4,)], batch_size=bs)
+    expected = [
+        L('Conv2d-1', [10, 3, 128, 1024], [10, 64, 128, 1024], 1792, 0),
+        L('MaxPool2d-2', [10, 64, 128, 1024], [10, 64, 64, 512], 0, 0),
+        L('Conv2d-3', [10, 64, 64, 512], [10, 96, 64, 512], 55392, 0),
+        L('MaxPool2d-4', [10, 96, 64, 512], [10, 96, 32, 256], 0, 0),
+        L('Conv2d-5', [10, 96, 32, 256], [10, 128, 32, 256], 110720, 0),
+        L('MaxPool2d-6', [10, 128, 32, 256], [10, 128, 16, 128], 0, 0),
+        L('Conv2d-7', [10, 128, 16, 128], [10, 192, 16, 128], 221376, 0),
+        L('AdaptiveAvgPool2d-8', [10, 192, 16, 128], [10, 192, 1, 1], 0, 0),
+        L('Linear-9', [10, 192], [10, 64], 12352, 0),
+        L('Linear-10', [10, 64], [10, 4], 260, 0),
+    ]
+    assert r == expected
+
+    expected_info = NetworkInfo(
+        401892, 401892, 62914560, 1289769280, 1607568, 1354291408
+    )
+    with io.StringIO() as buf:
+        net_info = summary(
+            multi_input_net2, [(3, 128, 1024), (4,)], batch_size=bs, file=buf
+        )
+    assert net_info == expected_info

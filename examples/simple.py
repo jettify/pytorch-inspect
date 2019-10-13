@@ -32,9 +32,10 @@ class SimpleNet(nn.Module):
 
 def main():
     net = SimpleNet()
-    ti.summary(net, (1, 32, 32))
+    batch_size = 100
+    ti.summary(net, (1, 32, 32), batch_size=batch_size)
 
-    info = ti.inspect(net, (1, 32, 32))
+    info = ti.inspect(net, (1, 32, 32), batch_size=batch_size)
     pprint.pprint(info)
 
 

@@ -6,7 +6,7 @@ from torch_inspect.inspect import LayerInfo as L, NetworkInfo
 
 
 def test_inspect(simple_model):
-    bs = -1  # default batch size
+    bs = 2  # default batch size
     r = inspect(simple_model, (1, 32, 32))
 
     expected = [
@@ -54,20 +54,20 @@ expected_summary = """
 ----------------------------------------------------------------
         Layer (type)               Output Shape         Param #
 ================================================================
-            Conv2d-1            [-1, 6, 30, 30]              60
-            Conv2d-2           [-1, 16, 13, 13]             880
-            Linear-3                  [-1, 120]          69,240
-            Linear-4                   [-1, 84]          10,164
-            Linear-5                   [-1, 10]             850
+            Conv2d-1             [2, 6, 30, 30]              60
+            Conv2d-2            [2, 16, 13, 13]             880
+            Linear-3                   [2, 120]          69,240
+            Linear-4                    [2, 84]          10,164
+            Linear-5                    [2, 10]             850
 ================================================================
 Total params: 81,194
 Trainable params: 81,194
 Non-trainable params: 0
 ----------------------------------------------------------------
-Input size (MB): 0.00
-Forward/backward pass size (MB): 0.06
+Input size (MB): 0.01
+Forward/backward pass size (MB): 0.13
 Params size (MB): 0.31
-Estimated Total Size (MB): 0.38
+Estimated Total Size (MB): 0.44
 ----------------------------------------------------------------
 """
 
@@ -99,13 +99,13 @@ def test_inspect_net_with_batch_norm(netbatchnorm):
     ]
     assert r == expected
     with io.StringIO() as buf:
-        network_info = summary(netbatchnorm, (20,), file=buf)
-    expected_info = NetworkInfo(661, 601, 80, 488, 2644, 3212)
+        network_info = summary(netbatchnorm, (20,), file=buf, batch_size=bs)
+    expected_info = NetworkInfo(661, 601, 80 * bs, 488 * bs, 2644, 8324)
     assert expected_info == network_info
 
 
 def test_simpleconv(simpleconv):
-    bs = -1
+    bs = 2
     r = inspect(simpleconv, [(1, 16, 16), (1, 28, 28)], batch_size=bs)
     expected = [
         L('Conv2d-1', [bs, 1, 16, 16], [bs, 1, 16, 16], 10, 0),
@@ -134,11 +134,11 @@ def test_autoencoder(autoencoder):
 
 
 def test_rnn(rnn):
-    bs = 10
+    bs = 12
     r = inspect(rnn, [(6, 3)], batch_size=bs, input_initializer=torch.zeros)
     expected = [
-        L('RNN-1', [bs, 6, 3], [[bs, 6, 5], [bs, 2, 5]], 170, 0),
-        L('Linear-2', [bs, 5], [bs, 1], 6, 0),
+        L('RNN-1', [bs, 6, 3], [[bs, 6, 5], [3, bs, 5]], 170, 0),
+        L('Linear-2', [6 * bs, 5], [6 * bs, 1], 6, 0),
     ]
     assert r == expected
 
@@ -168,3 +168,30 @@ def test_multi_input_net2(multi_input_net2):
             multi_input_net2, [(3, 128, 1024), (4,)], batch_size=bs, file=buf
         )
     assert net_info == expected_info
+
+
+def test_lstm_model(lstm_model):
+    bs = 10
+    r = inspect(
+        lstm_model, [(1, 28)], batch_size=bs, input_initializer=torch.zeros
+    )
+    out = [[10, 1, 100], [[1, 10, 100], [1, 10, 100]]]
+    expected = [
+        L('LSTM-1', [10, 1, 28], out, 52000, 0),
+        L('Linear-2', [10, 100], [10, 10], 1010, 0),
+    ]
+    assert r == expected
+
+
+def test_lstm_tagger_with_embedding(lstm_tagger):
+    bs = 10
+    r = inspect(
+        lstm_tagger, [(1, 1)], batch_size=bs, input_initializer=torch.zeros,
+        input_dtype=torch.LongTensor,
+    )
+    expected = [
+        L('Embedding-1', [bs, 1, 1], [bs, 1, 1, 6], 30, 0),
+        L('LSTM-2', [bs, 1, 6], [[bs, 1, 6], [[1, 1, 6], [1, 1, 6]]], 336, 0),
+        L('Linear-3', [bs, 6], [bs, 3], 21, 0)
+    ]
+    assert r == expected

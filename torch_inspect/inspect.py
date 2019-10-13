@@ -14,13 +14,14 @@ __all__ = ('LayerInfo', 'NetworkInfo', 'inspect', 'summary')
 
 
 InputShape = Tuple[int, ...]
+OutputShape = List[Union[int, List[int]]]
 
 
 @dataclass
 class LayerInfo:
     name: str
     input_shape: List[int]
-    output_shape: List[int]
+    output_shape: OutputShape
     trainable_params: int
     non_trainable_params: int
 
@@ -38,7 +39,7 @@ class NetworkInfo:
 def make_network_info(
     info_list: List[LayerInfo],
     input_size: Union[InputShape, List[InputShape]],
-    batch_size: int = -1,
+    batch_size: int = 2,
 ) -> NetworkInfo:
     trainable_params = 0
     total_params = 0
@@ -114,21 +115,14 @@ class _ModuleHook:
         name = f'{class_name}-{module_idx + 1}'
 
         # calculate input shape
-        input_shape = [self.batch_size] + list(input[0].size())[1:]
-
-        # calculate output shape
-        if isinstance(output, (list, tuple)):
-            output_shape = [
-                [self.batch_size] + list(o.size())[1:] for o in output
-            ]
-        else:
-            output_shape = [self.batch_size] + list(output.size())[1:]
+        input_shape = list(input[0].size())
+        output_shape = infer_shape(output)
 
         # calculate number of params
         trainable_params = 0
         non_trainable_params = 0
 
-        for _, param in module.named_parameters():  # type: ignore
+        for _, param in module.named_parameters():
             params = np.prod(param.size())
             if param.requires_grad:
                 trainable_params += params
@@ -154,19 +148,31 @@ class _ModuleHook:
         self.layer_list.append(layer)
 
 
+Output = Union[Tuple[torch.Tensor, ...], torch.Tensor]
+
+
+def infer_shape(output: Output) -> OutputShape:
+    shape: OutputShape = []
+    if isinstance(output, (list, tuple)):
+        shape = [infer_shape(o) for o in output]  # type: ignore
+    else:
+        shape = [int(s) for s in output.size()]
+    return shape
+
+
 def inspect(
     model: nn.Module,
     input_size: Union[InputShape, List[InputShape]],
     input_dtype: Type[torch.Tensor] = torch.FloatTensor,
     input_initializer: Callable[..., torch.Tensor] = torch.rand,
-    batch_size: int = -1,
+    batch_size: int = 2,
 ) -> List[LayerInfo]:
     hook = _ModuleHook(batch_size)
     handles: List[RemovableHandle] = []
 
     def register_hook(module: nn.Module) -> None:
         if should_attach_hook(model, module):
-            h: RemovableHandle = module.register_forward_hook(  # type: ignore
+            h: RemovableHandle = module.register_forward_hook(
                 hook.hook
             )
             handles.append(h)
@@ -177,11 +183,13 @@ def inspect(
 
     # make fake input with batch_size of 2 for batchnorm
     x = [
-        input_initializer(2, *in_size).type(input_dtype)  # type: ignore
+        input_initializer(batch_size, *in_size).type(
+            input_dtype  # type: ignore
+        )
         for in_size in input_size
     ]
     # attach hooks to each applicable layer
-    model.apply(register_hook)  # type: ignore
+    model.apply(register_hook)
 
     # forward pass
     try:
@@ -199,7 +207,7 @@ def summary(
     input_size: Union[InputShape, List[InputShape]],
     input_dtype: Type[torch.Tensor] = torch.FloatTensor,
     input_initializer: Callable[..., torch.Tensor] = torch.rand,
-    batch_size: int = -1,
+    batch_size: int = 2,
     file: IO[str] = sys.stdout,
     flush: bool = False,
 ) -> NetworkInfo:

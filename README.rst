@@ -15,6 +15,7 @@ Features
 ========
 * Provides helper function ``summary`` that prints Keras style model summary.
 * Provides helper function ``inspect`` that returns object with network summary information for programmatic access.
+* RNN/LSTM support.
 * Library has tests and reasonable code coverage.
 
 
@@ -54,7 +55,7 @@ Simple example
 
 
       net = SimpleNet()
-      ti.summary(net, (1, 32, 32), device='cpu')
+      ti.summary(net, (1, 32, 32))
 
 
 Will produce following output:
@@ -64,37 +65,37 @@ Will produce following output:
    ----------------------------------------------------------------
            Layer (type)               Output Shape         Param #
    ================================================================
-               Conv2d-1            [-1, 6, 30, 30]              60
-               Conv2d-2           [-1, 16, 13, 13]             880
-               Linear-3                  [-1, 120]          69,240
-               Linear-4                   [-1, 84]          10,164
-               Linear-5                   [-1, 10]             850
+               Conv2d-1           [100, 6, 30, 30]              60
+               Conv2d-2          [100, 16, 13, 13]             880
+               Linear-3                 [100, 120]          69,240
+               Linear-4                  [100, 84]          10,164
+               Linear-5                  [100, 10]             850
    ================================================================
    Total params: 81,194
    Trainable params: 81,194
    Non-trainable params: 0
    ----------------------------------------------------------------
-   Input size (MB): 0.00
-   Forward/backward pass size (MB): 0.06
+   Input size (MB): 0.39
+   Forward/backward pass size (MB): 6.35
    Params size (MB): 0.31
-   Estimated Total Size (MB): 0.38
+   Estimated Total Size (MB): 7.05
    ----------------------------------------------------------------
 
 For programmatic access to network information there is ``inspect`` function:
 
 .. code:: python
 
-      info = ti.inspect(net, (1, 32, 32), device='cpu')
+      info = ti.inspect(net, (1, 32, 32))
       print(info)
 
 
 .. code::
 
-     [LayerInfo(name='Conv2d-1', input_shape=[-1, 1, 32, 32], output_shape=[-1, 6, 30, 30], trainable_params=60, non_trainable_params=0),
-      LayerInfo(name='Conv2d-2', input_shape=[-1, 6, 15, 15], output_shape=[-1, 16, 13, 13], trainable_params=880, non_trainable_params=0),
-      LayerInfo(name='Linear-3', input_shape=[-1, 576], output_shape=[-1, 120], trainable_params=69240, non_trainable_params=0),
-      LayerInfo(name='Linear-4', input_shape=[-1, 120], output_shape=[-1, 84], trainable_params=10164, non_trainable_params=0),
-      LayerInfo(name='Linear-5', input_shape=[-1, 84], output_shape=[-1, 10], trainable_params=850, non_trainable_params=0)]
+     [LayerInfo(name='Conv2d-1', input_shape=[100, 1, 32, 32], output_shape=[100, 6, 30, 30], trainable_params=60, non_trainable_params=0),
+      LayerInfo(name='Conv2d-2', input_shape=[100, 6, 15, 15], output_shape=[100, 16, 13, 13], trainable_params=880, non_trainable_params=0),
+      LayerInfo(name='Linear-3', input_shape=[100, 576], output_shape=[100, 120], trainable_params=69240, non_trainable_params=0),
+      LayerInfo(name='Linear-4', input_shape=[100, 120], output_shape=[100, 84], trainable_params=10164, non_trainable_params=0),
+      LayerInfo(name='Linear-5', input_shape=[100, 84], output_shape=[100, 10], trainable_params=850, non_trainable_params=0)]
 
 
 Installation
@@ -113,7 +114,10 @@ Requirements
 
 References and Thanks
 ---------------------
-This package is based on pytorch-summary_ and  PyTorch issue_
+This package is based on pytorch-summary_ and  PyTorch issue_ . Compared to
+pytorch-summary_, *pytorch-inspect* has support of RNN/LSTMs, also provides programmatic
+access to the network summary information. With a bit more modular structure and presence of tests
+it is easier to extend and support more features.
 
 
 .. _Python: https://www.python.org

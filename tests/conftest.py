@@ -253,3 +253,35 @@ class MultiInputNet2(nn.Module):
 def multi_input_net2():
     net = MultiInputNet2()
     return net
+
+
+class LSTMModel(nn.Module):
+    # https://www.deeplearningwizard.com/deep_learning/practical_pytorch/
+    # pytorch_lstm_neuralnetwork/
+    def __init__(self, input_dim, hidden_dim, layer_dim, output_dim):
+        super(LSTMModel, self).__init__()
+        self.hidden_dim = hidden_dim
+        self.layer_dim = layer_dim
+        self.lstm = nn.LSTM(input_dim, hidden_dim, layer_dim, batch_first=True)
+        self.fc = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        h0 = torch.zeros(
+            self.layer_dim, x.size(0), self.hidden_dim
+        ).requires_grad_()
+        c0 = torch.zeros(
+            self.layer_dim, x.size(0), self.hidden_dim
+        ).requires_grad_()
+        out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
+        out = self.fc(out[:, -1, :])
+        return out
+
+
+@pytest.fixture(scope='session')
+def lstm_model():
+    input_dim = 28
+    hidden_dim = 100
+    layer_dim = 1
+    output_dim = 10
+    model = LSTMModel(input_dim, hidden_dim, layer_dim, output_dim)
+    return model

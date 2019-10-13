@@ -1,7 +1,7 @@
 Changes
 -------
 
-0.0.3 (2019-09-22)
+0.0.3 (2019-10-13)
 ------------------
 * Added LSTM support
 * Fixed multi input/output support

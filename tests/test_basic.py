@@ -186,12 +186,15 @@ def test_lstm_model(lstm_model):
 def test_lstm_tagger_with_embedding(lstm_tagger):
     bs = 10
     r = inspect(
-        lstm_tagger, [(1, 1)], batch_size=bs, input_initializer=torch.zeros,
+        lstm_tagger,
+        [(1, 1)],
+        batch_size=bs,
+        input_initializer=torch.zeros,
         input_dtype=torch.LongTensor,
     )
     expected = [
         L('Embedding-1', [bs, 1, 1], [bs, 1, 1, 6], 30, 0),
         L('LSTM-2', [bs, 1, 6], [[bs, 1, 6], [[1, 1, 6], [1, 1, 6]]], 336, 0),
-        L('Linear-3', [bs, 6], [bs, 3], 21, 0)
+        L('Linear-3', [bs, 6], [bs, 3], 21, 0),
     ]
     assert r == expected

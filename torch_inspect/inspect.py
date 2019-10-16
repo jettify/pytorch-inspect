@@ -172,9 +172,7 @@ def inspect(
 
     def register_hook(module: nn.Module) -> None:
         if should_attach_hook(model, module):
-            h: RemovableHandle = module.register_forward_hook(
-                hook.hook
-            )
+            h: RemovableHandle = module.register_forward_hook(hook.hook)
             handles.append(h)
 
     # multiple inputs to the network

@@ -8,6 +8,6 @@ ipdb==0.13.4
 ipython==7.16.1
 mypy==0.790
 pyroma==2.6
-pytest-cov==2.10.1
+pytest-cov==3.0.0
 pytest==6.1.2
 torchvision==0.8.1
